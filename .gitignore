@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+
+# Dataset (Big Data - Do not commit)
+dataset/
+dataset/**
+ml-25m/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
