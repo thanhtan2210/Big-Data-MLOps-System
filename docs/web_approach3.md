@@ -1,51 +1,63 @@
-# Mối quan hệ giữa Giao diện (web_approach3) và Kiến trúc (total_approach)
+# Mối quan hệ giữa Giao diện (Streamlit) và Kiến trúc Big Data (Lakehouse)
 
-Tài liệu này giải thích cách thức bản thiết kế giao diện Streamlit (`web_approach3.md`) hiện thực hóa và bổ trợ cho kiến trúc hệ thống tổng thể (`total_approach.md`), đảm bảo tính thống nhất cho dự án của team 2 người.
+Tài liệu này giải thích cách thức giao diện Streamlit (`web_approach3.md`) hiện thực hóa và trình diễn sức mạnh của kiến trúc Big Data Lakehouse (`total_approach.md`). Giao diện không chỉ là nơi hiển thị kết quả mà còn là một **Trung tâm điều hành (Control Tower)** để giám sát toàn bộ luồng dữ liệu.
 
 ---
 
 ## 1. Sự đồng nhất về Kỹ thuật (Chìa khóa & Ổ khóa)
 
-`web_approach3.md` không làm thay đổi kế hoạch trong `total_approach.md` mà đóng vai trò là "Bảng điều khiển" (Dashboard) để trình diễn "Bộ máy" (Engine) bên dưới:
+`web_approach3.md` đóng vai trò là "Bảng điều khiển trực quan" cho các thành phần Big Data phức tạp:
 
-*   **Hệ thống AI:** 
-    *   `total_approach.md` chọn **Two-Tower + Ranking**.
-    *   `web_approach3.md` thiết kế Trang 2 để trình diễn đúng quy trình 2 giai đoạn này: Lấy 50-100 phim ứng viên (Retrieval) và xếp hạng lại chọn ra Top 10 (Ranking).
-*   **Hạ tầng Big Data:** 
-    *   `total_approach.md` sử dụng **Kafka, Spark, Delta Lake**.
-    *   `web_approach3.md` tạo Trang 4 (Monitoring) để soi trực tiếp vào dòng dữ liệu thời gian thực và trạng thái lưu trữ ACID trên MinIO.
-*   **Lưu trữ Vector:** 
-    *   `total_approach.md` chọn **LanceDB**.
-    *   `web_approach3.md` hiện thực hóa nó thành tính năng "Tìm kiếm thông minh" dựa trên ngữ nghĩa (Semantic Search) ở Trang 2.
-
----
-
-## 2. Điểm nhấn về quy trình Two-Tower + Ranking
-
-Mô hình Two-Tower và Ranking xuất hiện xuyên suốt trong cả hai tài liệu vì đây là linh hồn của hệ thống:
-
-1.  **Giai đoạn 1 - Retrieval (Two-Tower):** Dùng để tìm nhanh các phim "có vẻ" liên quan từ hàng triệu phim trong LanceDB. Đầu ra này sẽ được hiển thị ở Trang 2 dưới dạng danh sách ứng viên.
-2.  **Giai đoạn 2 - Ranking (DeepFM/XGBoost):** Dùng để soi xét kỹ danh sách ứng viên và chọn ra Top 10 phim "đỉnh nhất". Đây là kết quả cuối cùng mà người dùng nhìn thấy trên giao diện.
-
-Việc trình diễn cả 2 bước này giúp giảng viên thấy bạn đang xây dựng một hệ thống gợi ý đa tầng đúng chuẩn công nghiệp (Netflix, YouTube).
+*   **Hệ thống AI (Two-Stage Funnel):** 
+    *   `total_approach.md`: Định nghĩa quy trình Retrieval & Ranking.
+    *   `web_approach3.md`: Trình diễn hiệu ứng "Phễu lọc" (Funnel). Người dùng thấy được danh sách 100 ứng viên từ Retrieval trước khi mô hình Ranking chọn ra Top 10.
+*   **Hạ tầng Big Data (Medallion Monitoring):** 
+    *   `total_approach.md`: Sử dụng Bronze, Silver, Gold trên Delta Lake.
+    *   `web_approach3.md`: Trang 4 hiển thị trực tiếp số lượng bản ghi và trạng thái của từng tầng dữ liệu trên MinIO.
+*   **Quản trị dữ liệu (Data Governance):** 
+    *   `total_approach.md`: Thiết lập Data Quality Gate.
+    *   `web_approach3.md`: Hiển thị báo cáo về dữ liệu lỗi (Dead Letter Queue) và tỷ lệ dữ liệu sạch.
 
 ---
 
-## 3. Vai trò của Chatbot AI (Trang 3)
+## 2. Chi tiết các Trang Dashboard theo hướng Big Data
 
-Trong `total_approach.md`, Chatbot được coi là một phần của **Serving Layer**. 
-*   `web_approach3.md` cụ thể hóa thành một trang riêng biệt để bạn dễ dàng triển khai các kỹ thuật NLP (LLM, Function Calling) mà không làm phức tạp hóa các trang khác.
-*   Điều này giúp "showcase" năng lực AI của bạn một cách tập trung và ấn tượng nhất.
+### Trang 2: Recommendation Engine (Trái tim của hệ thống)
+*   **Visual Retrieval:** Hiển thị kết quả từ LanceDB (Vector Search). Chứng minh khả năng tìm kiếm ngữ nghĩa với độ trễ cực thấp (< 5ms).
+*   **Ranking Insight:** Hiển thị điểm số dự đoán của mô hình Ranking (DeepFM) cho từng phim.
+*   **AI Explanation (Bonus):** Tích hợp LLM để giải thích lý do gợi ý dựa trên đặc trưng người dùng (lấy từ Feast).
+
+### Trang 3: AI Chatbot & Semantic Search
+*   **Context-Aware Chat:** Chatbot truy vấn trực tiếp vào Feature Store (Feast) để biết sở thích hiện tại của người dùng.
+*   **Multi-modal Search:** Demo khả năng tìm kiếm phim bằng mô tả tự nhiên (ví dụ: "Phim về du hành thời gian có cái kết buồn").
+
+### Trang 4: Big Data & System Monitor (Trọng tâm kỹ thuật)
+Đây là trang quan trọng nhất để trình diễn năng lực Big Data của dự án:
+*   **Real-time Stream:** Biểu đồ hiển thị tốc độ dữ liệu từ Kafka (Throughput) và các cửa sổ thời gian (Windowing) của Spark.
+*   **Medallion Health:** 
+    *   *Bronze Status:* Dữ liệu thô vừa cập nhật.
+    *   *Silver Status:* Kết quả sau khi chạy Quality Gate (số bản ghi hợp lệ/lỗi).
+    *   *Gold Status:* Các bảng đặc trưng đã được tối ưu hóa (Z-Order).
+*   **Delta Lake Insights:** Hiển thị lịch sử phiên bản (Time Travel) và hiệu quả của việc chạy `OPTIMIZE`.
+
+---
+
+## 3. Vai trò của Feast Feature Store trên UI
+
+Trên giao diện, sự hiện diện của Feast được cụ thể hóa qua:
+*   **User Profile Live:** Hiển thị các đặc trưng thực tế của người dùng đang đăng nhập (ví dụ: "Thể loại yêu thích 7 ngày qua: Sci-Fi (80%)").
+*   **Training-Serving Alignment:** Một phần nhỏ so sánh giá trị đặc trưng lúc huấn luyện và lúc dự đoán thực tế để chứng minh tính nhất quán của hệ thống.
 
 ---
 
 ## 4. Tổng kết sự tương quan
 
-| Thành phần | total_approach.md (Bộ máy - The Engine) | web_approach3.md (Bảng điều khiển - The Dashboard) |
+| Thành phần Big Data | total_approach.md (Engine) | web_approach3.md (Visual) |
 | :--- | :--- | :--- |
-| **Nhiệm vụ** | Quy định hệ thống chạy bằng gì, dữ liệu đi đâu. | Quy định người dùng nhìn thấy gì và cách bạn demo. |
-| **Dữ liệu** | Định nghĩa luồng Kafka -> Spark -> Delta Lake. | Hiển thị trực tiếp các thành phần này để chứng minh. |
-| **Mô hình** | Chọn Two-Tower & Ranking Model. | Trình diễn quy trình Retrieval & Ranking 2 giai đoạn. |
-| **AI Nâng cao** | Nhắc đến Serving Layer & LLM. | Hiện thực hóa thành Trang Chatbot & Semantic Search. |
+| **Medallion Architecture** | Pipeline Bronze -> Silver -> Gold | Dashboard theo dõi từng tầng dữ liệu |
+| **Data Quality** | Bộ quy tắc Great Expectations | Báo cáo tỷ lệ dữ liệu sạch/lỗi |
+| **Streaming** | Spark Windowing & Watermarking | Biểu đồ lưu lượng thời gian thực |
+| **Vector DB** | LanceDB Columnar Indexing | Tính năng Semantic Search tốc độ cao |
+| **Time Travel** | Versioning trên Delta Lake | Nút bấm "Xem dữ liệu trong quá khứ" |
 
-**Kết luận:** Hai tài liệu này bổ trợ hoàn hảo cho nhau. Bạn có thể yên tâm giữ nguyên `total_approach.md` làm khung kiến trúc, và dùng `web_approach3.md` làm hướng dẫn để bắt tay vào code giao diện.
+**Kết luận:** Với cách tiếp cận này, dự án của bạn không chỉ là một ứng dụng gợi ý phim đơn thuần mà là một bài toán **Data Engineering** thực thụ, đáp ứng đầy đủ các tiêu chuẩn vận hành dữ liệu lớn hiện nay.

@@ -1,87 +1,90 @@
 # Hệ thống Gợi ý Phim Big Data: Kiến trúc Lakehouse & Two-Tower (Retrieval & Ranking)
 
-Tài liệu này tổng hợp toàn diện giải pháp hiện thực hệ thống gợi ý phim quy mô lớn, chuyển dịch từ kiến trúc Lambda và mô hình GNN truyền thống sang mô hình **Two-Tower** chạy trên nền tảng **Lakehouse**. Đây là kiến trúc tối ưu cho hiệu suất thời gian thực và sát với thực tế công nghiệp (Netflix, YouTube).
+Tài liệu này tổng hợp toàn diện giải pháp hiện thực hệ thống gợi ý phim quy mô lớn, tập trung vào sức mạnh xử lý của **Kiến trúc Lakehouse (Medallion)** và mô hình **Two-Tower**. Đây là kiến trúc tối ưu cho hiệu suất thời gian thực, khả năng mở rộng (scalability) và quản trị dữ liệu chặt chẽ theo tiêu chuẩn công nghiệp.
 
 ---
 
 ## 1. Tổng quan Kiến trúc (High-Level Architecture)
 
-Thay vì tách biệt hoàn toàn Batch và Streaming (Lambda), hệ thống sử dụng mô hình **Lakehouse** thống nhất trên nền tảng **Delta Lake**, giúp đơn giản hóa việc quản lý dữ liệu và đảm bảo tính nhất quán ACID cho toàn bộ Pipeline.
+Hệ thống sử dụng mô hình **Lakehouse** thống nhất trên nền tảng **Delta Lake**, loại bỏ sự tách biệt giữa Batch và Streaming (Lambda). Toàn bộ vòng đời dữ liệu được quản lý qua kiến trúc **Medallion**, đảm bảo tính nhất quán ACID và khả năng khôi phục (Time Travel).
 
 ### Các trụ cột công nghệ chính:
-*   **Storage (Lakehouse):** MinIO + Delta Lake (thay thế PostgreSQL cho dữ liệu trung gian).
-*   **Processing:** Apache Spark (Unified Batch & Streaming).
-*   **MLOps & Feature Store:** Feast (Quản lý đặc trưng) + MLflow (Quản lý mô hình).
-*   **Recommendation Engine:** Quy trình 2 giai đoạn (Retrieval & Ranking).
-*   **Vector Search:** LanceDB (Serverless Vector DB lưu trên MinIO).
+*   **Storage (Lakehouse):** MinIO + Delta Lake (Quản lý dữ liệu theo tầng Bronze, Silver, Gold).
+*   **Processing:** Apache Spark (Unified Engine cho cả Batch, Streaming và Feature Engineering).
+*   **Data Governance:** Kiểm soát chất lượng dữ liệu (Data Quality Gate) và truy xuất vết (Lineage).
+*   **MLOps & Feature Store:** Feast (Online/Offline Store) + MLflow (Model Lifecycle).
+*   **Vector Search:** LanceDB (Tối ưu hóa Indexing dựa trên Columnar Storage trên MinIO).
 
 ---
 
-## 2. Chi tiết các lớp xử lý
+## 2. Chi tiết các lớp xử lý (Deep-dive into Big Data)
 
-### 2.1 Lớp Thu thập & Lưu trữ (Ingestion & Storage)
-*   **Kafka (Confluent):** Thu thập các sự kiện Click, View, Rating từ người dùng theo thời gian thực.
-*   **MinIO + Delta Lake:** 
-    *   Sử dụng thay cho kiến trúc Lambda truyền thống. Toàn bộ dữ liệu "Bronze" (thô), "Silver" (làm sạch), "Gold" (đặc trưng) đều nằm trên MinIO dưới dạng các bảng Delta.
-    *   **Lý do:** Cho phép Spark đọc/ghi dữ liệu đồng thời với tính chất ACID, loại bỏ "silos" dữ liệu và giảm chi phí vận hành server DB riêng.
+### 2.1 Lớp Thu thập & Quản trị (Ingestion & Medallion Architecture)
+Hệ thống tổ chức dữ liệu thành 3 tầng để tối ưu hóa việc quản lý:
+*   **Bronze (Raw Layer):** Lưu trữ dữ liệu thô từ **Kafka** (Clicks, Ratings, Views) dưới dạng Parquet/Delta. Giữ nguyên trạng dữ liệu để có khả năng tái xử lý (Reprocessing).
+*   **Silver (Cleaned & Augmented Layer):** 
+    *   **Data Quality Gate:** Sử dụng các bộ quy tắc (Expectations) để lọc bỏ dữ liệu lỗi, null hoặc sai định dạng. 
+    *   **Schema Evolution:** Tự động cập nhật cấu trúc bảng khi dữ liệu đầu vào thay đổi.
+*   **Gold (Aggregated Layer):** Các bảng đã được tối ưu hóa (Z-Order theo `userId`, `movieId`) để phục vụ việc huấn luyện mô hình và báo cáo với tốc độ cao nhất.
 
-### 2.2 Lớp Xử lý & Đặc trưng (Feature Engineering & Feature Store)
-*   **Apache Spark:** Thực hiện tính toán các đặc trưng (Features) như:
-    *   *User Features:* Trung bình rating 24h/7 ngày, thể loại yêu thích nhất, xu hướng tương tác gần đây.
-    *   *Movie Features:* Độ phổ biến, điểm đánh giá trung bình, metadata nhúng.
-*   **Feast (Feature Store):** 
-    *   Đóng vai trò là kho lưu trữ đặc trưng trung tâm. 
-    *   **Lý do:** Giải quyết vấn đề "Training-Serving Skew" (sai lệch dữ liệu giữa lúc huấn luyện và dự đoán thực tế). Đảm bảo mô hình luôn truy cập được đặc trưng mới nhất với độ trễ thấp.
+### 2.2 Lớp Xử lý Đặc trưng thời gian thực (Real-time Feature Engineering)
+Sử dụng **Spark Structured Streaming** để tính toán đặc trưng động:
+*   **Windowed Operations:** Tính toán các chỉ số trong cửa sổ thời gian (ví dụ: Xu hướng xem phim trong 15 phút, 1 giờ, 24 giờ).
+*   **Watermarking:** Xử lý dữ liệu đến muộn (Late-arriving data) từ Kafka, đảm bảo tính chính xác của các phép hợp nhất (Aggregations).
+*   **Feast Integration:** Các đặc trưng sau khi tính toán được đẩy đồng thời vào **Offline Store** (Delta Lake) để training và **Online Store** (Redis/Sqlite) để phục vụ dự đoán tức thì.
 
 ### 2.3 Mô hình Gợi ý 2 giai đoạn (Two-Stage Recommendation)
-Thay thế GNN (MARGO) phức tạp bằng quy trình 2 giai đoạn tiêu chuẩn:
+1.  **Giai đoạn 1 - Retrieval (Two-Tower Model):** 
+    *   Huấn luyện User/Item Tower để tạo Embeddings.
+    *   **LanceDB Indexing:** Sử dụng kỹ thuật **Disk-based Indexing (IVF-PQ)** trực tiếp trên MinIO. Cho phép truy xuất 100 ứng viên từ hàng triệu phim với độ trễ < 5ms mà không tốn nhiều RAM.
+2.  **Giai đoạn 2 - Ranking (DeepFM/XGBoost):** 
+    *   Sử dụng đặc trưng từ Feast để xếp hạng lại ứng viên dựa trên ngữ cảnh thực tế của người dùng.
 
-1.  **Giai đoạn 1 - Retrieval (Truy xuất - Two-Tower Model):**
-    *   **Cơ chế:** Gồm User Tower và Item Tower (TensorFlow/PyTorch). Biến User và Movie thành các Vector Embedding.
-    *   **LanceDB:** Lưu trữ Item Embeddings trực tiếp trên MinIO. Đây là Vector DB serverless, cho phép tìm ra 100 ứng viên từ hàng triệu phim trong < 5ms.
-
-2.  **Giai đoạn 2 - Ranking (Xếp hạng - DeepFM/XGBoost):**
-    *   **Cơ chế:** Lấy 100 ứng viên từ giai đoạn 1, kết hợp với đặc trưng ngữ cảnh (thời gian, thiết bị, lịch sử 5 phim gần nhất) để tính điểm số chính xác nhất cho Top 10.
-
-### 2.4 Lớp Phục vụ & MLOps (Serving & Model Management)
-*   **BentoML hoặc Ray Serve:** Đóng gói mô hình Retrieval và Ranking thành các API hiệu năng cao, hỗ trợ tự động scale.
-*   **MLflow:** 
-    *   **Experiment Tracking:** Theo dõi các phiên bản huấn luyện, lưu lại các chỉ số (Recall, Precision, NDCG).
-    *   **Model Registry:** Quản lý vòng đời mô hình (Staging, Production) và lưu trữ Artifacts.
+### 2.4 Quản trị hệ thống (Data Operations & MLOps)
+*   **Time Travel:** Tận dụng khả năng lưu trữ version của Delta Lake để quay ngược thời gian (Audit) hoặc tái hiện lại tập dữ liệu huấn luyện tại một thời điểm bất kỳ.
+*   **Optimized Performance:** Thực hiện định kỳ các lệnh `OPTIMIZE` và `VACUUM` để dọn dẹp file nhỏ, tăng hiệu suất IO cho Big Data.
 
 ---
 
-## 3. Quy trình luồng dữ liệu (Data Flow)
+## 3. Quy trình luồng dữ liệu & Vòng đời MLOps (End-to-End Workflow)
 
-1.  **User Action:** Người dùng tương tác (Rate/Like) -> Đẩy sự kiện vào **Kafka**.
-2.  **Streaming & Storage:** **Spark Streaming** xử lý tin nhắn từ Kafka và ghi trực tiếp vào **Delta Lake (MinIO)**.
-3.  **Feature Sync:** **Spark** định kỳ tính toán đặc trưng từ Delta Lake và cập nhật vào **Feast**.
-4.  **Inference (Dự đoán):**
-    *   Backend nhận yêu cầu -> Lấy đặc trưng User/Context từ **Feast**.
-    *   **Retrieval:** Tìm 100 phim gần nhất trong **LanceDB**.
-    *   **Ranking:** Xếp hạng lại 100 phim đó bằng mô hình **DeepFM** và trả về Top 10.
+Hệ thống không vận hành theo một đường thẳng mà theo một vòng lặp khép kín để tối ưu hóa hiệu suất Big Data:
+
+1.  **Data Source (Nguồn):** Kafka (Real-time events) & CSV/Parquet (Historical data).
+2.  **Ingestion & ETL (Medallion):** Spark xử lý dữ liệu qua các tầng Bronze (Raw), Silver (Cleaned), Gold (Aggregated).
+3.  **Lakehouse & Feature Store:** 
+    *   **Delta Lake:** Lưu trữ dữ liệu lớn bền vững, hỗ trợ ACID.
+    *   **Feast:** Cung cấp đặc trưng "Point-in-time" cho Training và "Low-latency" cho Serving.
+4.  **Model Lifecycle (MLOps):** 
+    *   **Training:** Huấn luyện Two-Tower Model trên Spark/TensorFlow.
+    *   **Tracking:** Ghi lại mọi thí nghiệm (Hyperparameters, Metrics) trên MLflow.
+    *   **Registry:** Quản lý và phê duyệt phiên bản mô hình tốt nhất (Staging/Production).
+5.  **Serving & AI:** Triển khai mô hình (BentoML/Ray Serve) kết hợp với **LanceDB** để phục vụ yêu cầu gợi ý thời gian thực.
+6.  **Dashboard & Monitoring:** 
+    *   Hiển thị kết quả gợi ý và các chỉ số hệ thống (Streamlit).
+    *   Giám sát chất lượng dữ liệu và độ lệch mô hình (Drift Detection).
+7.  **Feedback Loop:** Hành động của người dùng trên Dashboard (Click/Rate) được đẩy ngược lại **Kafka**, tạo thành dòng dữ liệu mới để cải thiện mô hình liên tục.
 
 ---
 
-## 4. Tóm tắt Stack Công nghệ Đề xuất
+## 4. Tóm tắt Stack Công nghệ Big Data
 
 1.  **Ingestion:** Kafka.
-2.  **Storage:** MinIO + Delta Lake.
-3.  **Processing:** Apache Spark.
-4.  **Feature Store:** Feast.
-5.  **Vector Search:** LanceDB.
-6.  **Model Management:** MLflow.
-7.  **Serving:** BentoML hoặc Ray Serve.
+2.  **Lakehouse Storage:** MinIO + Delta Lake.
+3.  **Unified Processing:** Apache Spark.
+4.  **Feature Management:** Feast.
+5.  **Vector Intelligence:** LanceDB.
+6.  **Pipeline Orchestration:** MLflow + (Airflow/Prefect - tùy chọn).
 
 ---
 
-## 5. So sánh ưu điểm so với kiến trúc cũ (Báo cáo)
+## 5. So sánh ưu điểm về khía cạnh Big Data
 
-| Thành phần | Bài báo cáo cũ (Lambda) | Kiến trúc mới (Lakehouse) |
+| Thành phần | Kiến trúc truyền thống | Kiến trúc Big Data Lakehouse |
 | :--- | :--- | :--- |
-| **Kiến trúc** | Lambda (Batch + Stream riêng) | Lakehouse (Delta Lake thống nhất) |
-| **Quản lý dữ liệu** | Phức tạp (S3 + PostgreSQL) | Tối ưu (Tận dụng Object Storage MinIO) |
-| **Mô hình AI** | GNN (MARGO - Khó vận hành) | Two-Tower + Ranking (Công nghiệp) |
-| **Vector DB** | Milvus (Cần Server riêng) | LanceDB (Serverless trên MinIO) |
-| **MLOps** | MLflow Tracking cơ bản | Feast + MLflow (Full MLOps Lifecycle) |
-| **Độ trễ** | Trung bình | Cực thấp (< 5ms cho Retrieval) |
+| **Tính nhất quán** | Dễ mất đồng bộ giữa Batch/Stream | ACID hoàn toàn trên Delta Lake |
+| **Quản trị dữ liệu** | Khó kiểm soát chất lượng thô | Medallion (Bronze/Silver/Gold) + Quality Gate |
+| **Xử lý đặc trưng** | Độ trễ cao (tính theo giờ) | Windowing & Watermarking (tính theo giây) |
+| **Khả năng tái hiện** | Khó (Data Overwrite) | Time Travel (Version control cho Data) |
+| **Hiệu suất lưu trữ** | Phụ thuộc vào RAM (Vector DB) | Disk-based Indexing (LanceDB trên MinIO) |
+| **Mở rộng (Scaling)** | Khó khăn khi dữ liệu lớn | Tối ưu hóa file (Z-Order, Optimize) |
