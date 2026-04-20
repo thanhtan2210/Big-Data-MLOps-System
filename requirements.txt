@@ -5,16 +5,19 @@ confluent-kafka==2.2.0
 boto3==1.28.0  # Để làm việc với MinIO (S3)
 
 # MLOps & Feature Store
-feast==0.31.0
+feast
 mlflow==2.6.0
 bentoml==1.1.1
 
 # AI & Vector DB
-tensorflow==2.13.0
-lancedb==0.1.11
-pandas==2.0.3
-numpy==1.24.3
+tensorflow
+lancedb
+pandas
+numpy
 
 # UI & Visualization
-streamlit==1.25.0
-plotly==5.15.0
+streamlit
+plotly
+
+dotenv
+pytest
