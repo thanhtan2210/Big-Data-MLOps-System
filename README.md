@@ -6,45 +6,45 @@ Dự án xây dựng hệ thống gợi ý phim quy mô lớn sử dụng kiến
 
 ## 🚀 Hướng dẫn vận hành (Quick Start)
 
-### 1. Chuẩn bị môi trường
-*   Cài đặt **Python 3.10+**.
-*   Cài đặt **Java 11** (JDK 11) và thiết lập `JAVA_HOME`.
-*   Cài đặt **Docker Desktop**.
-*   Tải `winutils.exe` vào `C:\hadoop\bin` (đối với Windows).
+### 1. Chuẩn bị môi trường (Bắt buộc)
+*   **Python:** Cài đặt **Python 3.11** (Tránh 3.12+ và 3.10- để đảm bảo tương thích thư viện AI).
+*   **Java:** Cài đặt **JDK 11 hoặc 17**.
+*   **Docker:** Docker Desktop phải đang chạy.
+*   **Hadoop binaries:** Tải `winutils.exe` vào `C:\hadoop\bin`.
 
-### 2. Cài đặt thư viện
+### 2. Thiết lập dự án
 ```powershell
+# Tạo môi trường ảo bằng Python 3.11
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Cài đặt thư viện
 pip install -r requirements.txt
-pip install python-dotenv setuptools wheel
 ```
 
-### 3. Khởi chạy hạ tầng (Infrastructure)
-```powershell
-cd infra
-docker-compose up -d
-```
+### 3. Khởi chạy toàn bộ hệ thống (End-to-End)
+Thay vì chạy từng file thủ công, bạn chỉ cần thực hiện chu trình tự động:
 
-### 4. Khởi tạo dữ liệu & Bucket
-```powershell
-$env:PYTHONPATH="."
-python src/utils/setup_minio.py
-```
+1. **Bật hạ tầng:** `cd infra; docker-compose up -d`
+2. **Chạy Pipeline E2E:** `python run_e2e_pipeline.py`
 
-### 5. Chạy luồng dữ liệu (Data Pipeline)
-Mở các Terminal riêng biệt cho mỗi lệnh:
-*   **Producer:** `python src/ingestion/kafka_producer.py` (Đẩy dữ liệu vào Kafka).
-*   **Streaming Pipeline:** `python src/pipelines/bronze_to_silver.py` (Làm sạch dữ liệu vào Delta Lake).
-*   **Feature Engineering:** `python src/pipelines/silver_to_gold.py` (Tính toán đặc trưng).
-
-### 6. Khởi chạy Dashboard & API
-*   **BentoML Serving:** `bentoml serve src/serving/service.py:svc --reload`
-*   **Streamlit UI:** `streamlit run src/ui/main.py`
+### 4. Kiểm tra thành quả
+*   **Dashboard:** `streamlit run src/ui/main.py`
+*   **MLflow UI:** `http://127.0.0.1:5000`
+*   **MinIO UI:** `http://127.0.0.1:9001` (User: admin / Pass: password)
 
 ---
 
-## 🛠 Công nghệ sử dụng
-*   **Processing:** Apache Spark, Spark Structured Streaming.
-*   **Storage:** MinIO (S3), Delta Lake (Medallion Architecture).
-*   **MLOps:** Feast (Feature Store), MLflow (Model Registry).
-*   **Serving:** BentoML, LanceDB (Vector Search).
-*   **UI:** Streamlit.
+## 🛠 Xử lý lỗi thường gặp (Troubleshooting)
+*   **Lỗi WinError 10054 (Spark crash):** Đã được xử lý tự động trong `spark_session.py` bằng cấu hình `--add-opens`.
+*   **Lỗi ModuleNotFoundError (pkg_resources):** Hãy đảm bảo đã cài `setuptools<70`.
+*   **Lỗi PATH_NOT_FOUND:** Thường do Spark Streaming chưa kịp ghi dữ liệu. Script E2E hiện tại đã được tăng thời gian chờ lên 120s để khắc phục.
+
+---
+
+## 🏗 Kiến trúc hệ thống
+Chi tiết xem tại thư mục `docs/`:
+1. [Kiến trúc Lakehouse & MLOps](docs/total_approach.md)
+2. [Đặc tả kỹ thuật (Spec)](docs/technical_spec.md)
+3. [Thiết kế Dashboard](docs/web_approach3.md)
+4. [Kế hoạch phát triển Web App](docs/web_features.md)
