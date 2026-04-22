@@ -1,23 +1,24 @@
-# Data Processing & Storage
+# Data Processing
 pyspark==3.4.1
 delta-spark==2.4.0
-confluent-kafka==2.2.0
-boto3==1.28.0  # Để làm việc với MinIO (S3)
+confluent-kafka>=2.0.0
+boto3
+python-dotenv
 
-# MLOps & Feature Store
-feast
-mlflow==2.6.0
-bentoml==1.1.1
+# MLOps
+mlflow==2.11.3
+pydantic<2.0.0
+feast>=0.31.0
+bentoml>=1.1.0
+setuptools  # Sửa lỗi ModuleNotFoundError: No module named 'pkg_resources'
 
-# AI & Vector DB
-tensorflow
+# AI & Science
+numpy<2.0.0
+tensorflow>=2.13.0
+pandas<2.1.0
 lancedb
-pandas
-numpy
 
-# UI & Visualization
+# UI & Test
 streamlit
 plotly
-
-dotenv
 pytest
