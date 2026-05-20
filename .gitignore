@@ -24,3 +24,5 @@ Thumbs.db
 
 .pytest_cache.
 .env
+.pytest_cache/
+big_data_mlops_system.egg-info
