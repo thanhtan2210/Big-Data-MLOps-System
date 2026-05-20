@@ -50,11 +50,15 @@ def train_retrieval():
             loss = 0.5 / (epoch + 1)
             mlflow.log_metric("loss", loss, step=epoch)
 
-        # 3. Lưu mô hình vào MLflow (Sẽ đẩy lên MinIO bucket 'mlflow')
-        print("Uploading model to MLflow Artifact Store (MinIO)...")
-        mlflow.tensorflow.log_model(user_tower, "user_tower_model")
+        # 3. Lưu mô hình vào MLflow và Đăng ký vào Model Registry
+        print("Uploading model to MLflow Artifact Store and Registering...")
+        mlflow.tensorflow.log_model(
+            user_tower, 
+            "user_tower_model",
+            registered_model_name="user_tower_model"
+        )
         
-        print("SUCCESS: Model training completed and logged to MLflow!")
+        print("SUCCESS: Model training completed and registered to MLflow!")
 
 if __name__ == "__main__":
     train_retrieval()
