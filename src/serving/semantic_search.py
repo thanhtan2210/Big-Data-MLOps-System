@@ -113,6 +113,28 @@ class SemanticSearchEngine:
             return Reranker.rerank(candidates)[:top_k]
         return candidates[:top_k]
 
+    def search_similar_movies_by_title(self, title: str, top_k: int = 5, use_reranker: bool = True) -> List[Dict[str, Any]]:
+        if self.table is None: self.load_table()
+        df = self.table.to_pandas()
+        
+        # Tìm phim gốc theo tên
+        source_movie = df[df["title"].str.lower().str.contains(title.lower(), na=False)].head(1)
+        if source_movie.empty:
+            raise ValueError(f"Không tìm thấy phim với tên: {title}")
+            
+        movie_id = int(source_movie.iloc[0]["movieId"])
+        source_vector = source_movie.iloc[0]["vector"]
+        query_vector = np.array(source_vector, dtype=np.float32).flatten()
+        
+        fetch_k = (top_k * 2) + 1 if use_reranker else top_k + 1
+        results_df = self.table.search(query_vector).metric("cosine").limit(fetch_k).to_pandas()
+        filtered_df = results_df[results_df["movieId"] != movie_id]
+        
+        candidates = [self._format_result(row) for _, row in filtered_df.iterrows()]
+        if use_reranker:
+            return Reranker.rerank(candidates)[:top_k]
+        return candidates[:top_k]
+
     def get_movies_by_decade(self, decade: str, top_k: int = 5) -> List[Dict[str, Any]]:
         if self.table is None: self.load_table()
         df = self.table.to_pandas()
