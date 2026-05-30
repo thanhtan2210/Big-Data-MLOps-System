@@ -71,10 +71,10 @@ def get_movies_by_decade(decade: str) -> str:
         except Exception as e: logger.error(f"Lỗi get_movies_by_decade: {e}")
     return '{"results": []}'
 
-def compare_movies(movie_id_1: int, movie_id_2: int) -> str:
+def compare_movies(title1: str, title2: str) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.compare_movies(movie_id_1, movie_id_2), ensure_ascii=False)
+        try: return json.dumps(engine.compare_movies(title1, title2), ensure_ascii=False)
         except Exception as e: logger.error(f"Lỗi compare_movies: {e}")
     return '{"error": "mock"}'
 
@@ -89,7 +89,7 @@ tools = [
     {"type": "function", "function": {"name": "search_movies_by_description", "description": "Tìm kiếm phim theo mô tả nội dung hoặc ngữ cảnh người dùng.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}},
     {"type": "function", "function": {"name": "get_recommendations", "description": "Lấy danh sách phim tương tự dựa trên một ID phim gốc.", "parameters": {"type": "object", "properties": {"movie_id": {"type": "integer"}}, "required": ["movie_id"]}}},
     {"type": "function", "function": {"name": "get_movies_by_decade", "description": "Lấy phim nổi bật theo thập niên (VD: '1990s').", "parameters": {"type": "object", "properties": {"decade": {"type": "string"}}, "required": ["decade"]}}},
-    {"type": "function", "function": {"name": "compare_movies", "description": "So sánh 2 phim dựa trên ID.", "parameters": {"type": "object", "properties": {"movie_id_1": {"type": "integer"}, "movie_id_2": {"type": "integer"}}, "required": ["movie_id_1", "movie_id_2"]}}},
+    {"type": "function", "function": {"name": "compare_movies", "description": "So sánh 2 bộ phim dựa trên tên phim.", "parameters": {"type": "object", "properties": {"title1": {"type": "string", "description": "Tên bộ phim thứ nhất"}, "title2": {"type": "string", "description": "Tên bộ phim thứ hai"}}, "required": ["title1", "title2"]}}},
     {"type": "function", "function": {"name": "get_trending_by_rating", "description": "Lấy phim hay nhất theo rating tối thiểu và số vote.", "parameters": {"type": "object", "properties": {"min_rating": {"type": "number"}, "min_votes": {"type": "integer"}}, "required": ["min_rating", "min_votes"]}}}
 ]
 
