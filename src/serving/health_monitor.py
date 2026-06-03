@@ -16,24 +16,13 @@ def get_s3_client():
                         )
 
 def ensure_lancedb_ready():
-    """Tải và giải nén database từ R2 nếu chưa tồn tại local."""
+    """Chỉ trả về đường dẫn tới database, vì app.py đã lo việc tải từ R2."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    # Thư mục giải nén mặc định từ zip
     db_path = os.path.join(base_dir, 'lancedb_movies') 
-    zip_path = os.path.join(base_dir, 'lancedb_movies_monitor.zip')
-    
     if not os.path.exists(db_path):
-        logger.info(f"Đang tải LanceDB từ R2 về...")
-        try:
-            s3 = get_s3_client()
-            bucket = os.environ.get('S3_BUCKET_NAME', 'movie-mlops')
-            s3.download_file(bucket, 'lancedb_movies.zip', zip_path)
-            shutil.unpack_archive(zip_path, base_dir)
-            os.remove(zip_path)
-            logger.info("Đã giải nén database thành công.")
-        except Exception as e:
-            logger.error(f"Lỗi khi tải/giải nén từ R2: {e}")
-            raise e
+        # Fallback to relative path if run differently
+        if os.path.exists('lancedb_movies'):
+            return 'lancedb_movies'
     return db_path
 
 def get_db_table(table_name: str):

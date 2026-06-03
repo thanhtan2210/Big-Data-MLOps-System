@@ -119,7 +119,7 @@ class MovieChatbot:
 
         # 3. System Prompt Augmentation
         system_prompt = f"""Bạn là chuyên gia tư vấn phim AI. 
-        Luôn dựa vào THÔNG TIN DATABASE để trả lời (nếu có). Trả lời ngắn gọn, thân thiện, tiếng Việt.
+        TUYỆT ĐỐI KHÔNG tự bịa đặt thông tin. Chỉ sử dụng thông tin từ THÔNG TIN DATABASE cung cấp bên dưới. Nếu không có thông tin, hãy lịch sự trả lời: 'Tôi không có đủ dữ liệu về bộ phim này'. Trả lời ngắn gọn, thân thiện bằng tiếng Việt.
         {memory_str}
         {context_str}
         """

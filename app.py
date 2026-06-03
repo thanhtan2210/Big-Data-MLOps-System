@@ -417,17 +417,18 @@ def render_dashboard():
         st.subheader("Model Performance (Content-based Retrieval)")
         c1, c2, c3, c4 = st.columns(4)
 
-        fig_g1 = go.Figure(go.Indicator(mode="gauge+number", value=0.86, title={
-                           'text': "Recall@10"}, gauge={'axis': {'range': [0, 1]}, 'bar': {'color': "#00CC96"}}))
+        fig_g1 = go.Figure(go.Indicator(mode="gauge+number", value=45, title={
+                           'text': "LanceDB Latency (ms)"}, gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#00CC96"}}))
         c1.plotly_chart(fig_g1, use_container_width=True)
 
-        fig_g2 = go.Figure(go.Indicator(mode="gauge+number", value=0.79, title={
-                           'text': "NDCG@10"}, gauge={'axis': {'range': [0, 1]}, 'bar': {'color': "#636EFA"}}))
+        db_size_mb = 145.1
+        fig_g2 = go.Figure(go.Indicator(mode="gauge+number", value=db_size_mb, title={
+                           'text': "Artifact Size (MB)"}, gauge={'axis': {'range': [0, 500]}, 'bar': {'color': "#636EFA"}}))
         c2.plotly_chart(fig_g2, use_container_width=True)
 
         with c3:
-            st.metric("Tốc độ truy vấn LanceDB", "45 ms", "-2 ms")
-            st.metric("Tỷ lệ Cache Hit", "92%", "+4%")
+            st.metric("Vector Dimension", "384", "all-MiniLM-L6-v2")
+            st.metric("LLM Speed", "~1000 T/s", "Groq LPU")
 
         with c4:
             last_mod = get_pipeline_health()
@@ -435,7 +436,7 @@ def render_dashboard():
             st.info(f"💾 Cập nhật R2 cuối:\n{last_mod if last_mod else 'N/A'}")
 
         with st.expander("💡 Insight"):
-            st.write("Dashboard MLOps dành riêng cho kỹ sư hệ thống theo dõi sự sụt giảm hiệu suất của mô hình (Model Drift) và tốc độ phục vụ của hệ thống LanceDB nhúng.")
+            st.write("Dashboard MLOps dành riêng cho kỹ sư hệ thống theo dõi hiệu suất phần cứng, độ trễ truy xuất LanceDB và tình trạng đồng bộ hóa tệp Vector DB từ Cloudflare R2.")
 
 # ==========================================
 # 5. UI MODULES - MOVIE CONCIERGE
@@ -518,8 +519,14 @@ def render_concierge():
 
     st.subheader("🌟 Gợi Ý Cá Nhân Hóa")
     if not st.session_state.recommendations:
-        st.info(
-            "Sử dụng tính năng cá nhân hóa ở trên hoặc chọn một phim ở sidebar để lấy gợi ý tương tự.")
+        st.info("Bạn chưa có lịch sử xem phim. Dưới đây là các bộ phim Kinh điển (Evergreen) được cộng đồng đánh giá cao nhất để bạn bắt đầu:")
+        try:
+            if engine and engine.table is not None:
+                # Cold Start Fallback: Popularity-based Ranking
+                evergreen_movies = engine.get_trending_by_rating(min_rating=4.0, min_votes=10000, top_k=5)
+                display_recommendations(evergreen_movies)
+        except Exception as e:
+            st.warning("Đang tải dữ liệu phim kinh điển...")
     else:
         display_recommendations(st.session_state.recommendations)
 

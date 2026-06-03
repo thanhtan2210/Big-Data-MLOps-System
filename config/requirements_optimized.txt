@@ -9,13 +9,12 @@ pyarrow>=14.0.0
 # === MLOps & Serving ===
 mlflow==2.11.3
 pydantic>=2.0.0
-feast>=0.31.0
-bentoml>=1.1.0
+
 setuptools
 
 # === AI & NLP (Gemini & Embeddings) ===
 # NOTE: TensorFlow, torch, numpy, pandas, sentence-transformers installed separately in Dockerfile
-google-genai>=0.3.0
+groq>=0.11.0
 lancedb>=0.1.0
 
 # === Utilities ===

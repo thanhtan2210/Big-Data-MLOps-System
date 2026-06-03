@@ -3,7 +3,6 @@ lancedb>=0.26.0
 pylance
 sentence-transformers==2.7.0
 boto3==1.43.8
-google-genai==0.3.0
 pandas==2.2.0
 numpy==1.26.4
 groq>=0.11.0
