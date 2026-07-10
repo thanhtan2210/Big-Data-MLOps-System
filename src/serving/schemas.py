@@ -1,4 +1,3 @@
-import pandera as pa
 from pandera import Column, DataFrameSchema, Check
 
 # Schema để validate thông tin phim trả về từ LanceDB / format_result

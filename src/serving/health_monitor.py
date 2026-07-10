@@ -3,7 +3,6 @@ import boto3
 import lancedb
 import logging
 import datetime
-import shutil
 from typing import Dict, Any
 
 logger = logging.getLogger("health_monitor")

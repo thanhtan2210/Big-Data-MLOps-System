@@ -9,7 +9,8 @@ class Reranker:
     @staticmethod
     def rerank(candidates: List[Dict[str, Any]], sim_weight=0.6, pop_weight=0.3, qual_weight=0.1) -> List[Dict[str, Any]]:
         """Cân bằng lại độ tương đồng (ngách) với độ phổ biến và chất lượng chung"""
-        if not candidates: return []
+        if not candidates:
+            return []
         
         # Max values for normalization
         max_pop = max([c['rating_count'] for c in candidates]) or 1
@@ -81,7 +82,8 @@ class SemanticSearchEngine:
 
     # ================= LEVEL 1 =================
     def search_by_description(self, query_text: str, top_k: int = 10, use_reranker: bool = True) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         
         # KIỂM TRA ĐẦU VÀO:
         if not query_text or not query_text.strip():
@@ -105,12 +107,14 @@ class SemanticSearchEngine:
         return self._validate_candidates(candidates[:top_k], "record")
 
     def search_similar_movies(self, movie_id: int, top_k: int = 5, use_reranker: bool = True) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         
         df = self.table.to_pandas()
         query_res = df[df["movieId"] == movie_id]
         
-        if query_res.empty: raise ValueError(f"Không tìm thấy phim với ID: {movie_id}")
+        if query_res.empty:
+            raise ValueError(f"Không tìm thấy phim với ID: {movie_id}")
             
         source_vector = query_res.iloc[0]["vector"]
         
@@ -131,7 +135,8 @@ class SemanticSearchEngine:
         return self._validate_candidates(candidates[:top_k], "record")
 
     def search_similar_movies_by_title(self, title: str, top_k: int = 5, use_reranker: bool = True) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         df = self.table.to_pandas()
         
         # Tìm phim gốc theo tên
@@ -154,14 +159,16 @@ class SemanticSearchEngine:
         return self._validate_candidates(candidates[:top_k], "record")
 
     def get_movies_by_decade(self, decade: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         df = self.table.to_pandas()
         df_filtered = df[df['title'].str.contains(f"({decade[:2]}", regex=False, na=False)]
         df_sorted = df_filtered.sort_values(by="rating_count", ascending=False).head(top_k)
         return [self._format_result(row) for _, row in df_sorted.iterrows()]
 
     def compare_movies(self, title1: str, title2: str) -> Dict[str, Any]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         df = self.table.to_pandas()
         
         # Tìm kiếm phim theo tên (không phân biệt hoa thường)
@@ -181,7 +188,8 @@ class SemanticSearchEngine:
         }
 
     def get_trending_by_rating(self, min_rating: float, min_votes: int, top_k: int = 5) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         df = self.table.to_pandas()
         
         df_filtered = df[(df['avg_rating'] >= min_rating) & (df['rating_count'] >= min_votes)]
@@ -191,7 +199,8 @@ class SemanticSearchEngine:
 
     # ================= LEVEL 2 =================
     def get_user_vector(self, user_movie_ratings: Dict[int, float]) -> np.ndarray:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         df = self.table.to_pandas()
         
         vectors = []
@@ -210,7 +219,8 @@ class SemanticSearchEngine:
         return user_vec / np.linalg.norm(user_vec)
 
     def personalized_recommend(self, user_vec: np.ndarray, top_k: int = 10) -> List[Dict[str, Any]]:
-        if self.table is None: self.load_table()
+        if self.table is None:
+            self.load_table()
         
         query_vector = user_vec.tolist()
         

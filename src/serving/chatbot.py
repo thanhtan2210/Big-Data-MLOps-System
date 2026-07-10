@@ -53,36 +53,46 @@ def get_search_engine():
 def search_movies_by_description(query: str) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.search_by_description(query, top_k=3), ensure_ascii=False)
-        except Exception as e: logger.error(f"Lỗi search_by_description: {e}")
+        try:
+            return json.dumps(engine.search_by_description(query, top_k=3), ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Lỗi search_by_description: {e}")
     return '{"results": [], "status": "mock"}'
 
 def get_recommendations(title: str) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.search_similar_movies_by_title(title, top_k=5), ensure_ascii=False)
-        except Exception as e: logger.error(f"Lỗi get_recommendations: {e}")
+        try:
+            return json.dumps(engine.search_similar_movies_by_title(title, top_k=5), ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Lỗi get_recommendations: {e}")
     return '{"title": "' + title + '", "recommendations": []}'
 
 def get_movies_by_decade(decade: str) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.get_movies_by_decade(decade, top_k=5), ensure_ascii=False)
-        except Exception as e: logger.error(f"Lỗi get_movies_by_decade: {e}")
+        try:
+            return json.dumps(engine.get_movies_by_decade(decade, top_k=5), ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Lỗi get_movies_by_decade: {e}")
     return '{"results": []}'
 
 def compare_movies(title1: str, title2: str) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.compare_movies(title1, title2), ensure_ascii=False)
-        except Exception as e: logger.error(f"Lỗi compare_movies: {e}")
+        try:
+            return json.dumps(engine.compare_movies(title1, title2), ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Lỗi compare_movies: {e}")
     return '{"error": "mock"}'
 
 def get_trending_by_rating(min_rating: float, min_votes: int) -> str:
     engine = get_search_engine()
     if engine and engine != "MOCK":
-        try: return json.dumps(engine.get_trending_by_rating(min_rating, min_votes, top_k=5), ensure_ascii=False)
-        except Exception as e: logger.error(f"Lỗi get_trending_by_rating: {e}")
+        try:
+            return json.dumps(engine.get_trending_by_rating(min_rating, min_votes, top_k=5), ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Lỗi get_trending_by_rating: {e}")
     return '{"results": []}'
 
 tools = [
@@ -96,7 +106,8 @@ tools = [
 # LEVEL 3: RAG Chatbot with Entity Memory
 class MovieChatbot:
     def __init__(self):
-        if not client: raise ValueError("Vui lòng cấu hình GROQ_API_KEY trong file .env")
+        if not client:
+            raise ValueError("Vui lòng cấu hình GROQ_API_KEY trong file .env")
         logger.info("Đang khởi tạo MovieChatbot (RAG + Memory) với Groq (Llama-3.3-70b-versatile)...")
 
     def chat(self, user_message: str, history: Optional[List[Dict[str, Any]]] = None, entity_memory: Optional[Dict[str, Any]] = None) -> str:

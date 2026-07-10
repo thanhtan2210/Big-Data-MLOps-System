@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock, patch
 import datetime
 from src.serving.health_monitor import get_overall_health, get_quality_report, get_pipeline_status
