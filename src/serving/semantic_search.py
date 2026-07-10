@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import lancedb
 from typing import List, Dict, Any
-from sentence_transformers import SentenceTransformer
+
 
 class Reranker:
     @staticmethod
@@ -41,6 +41,7 @@ class SemanticSearchEngine:
         
         if self.model is None:
             print("Đang tải Embedding Model mới...")
+            from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer('all-MiniLM-L6-v2')
         
         self.table = None
@@ -64,6 +65,20 @@ class SemanticSearchEngine:
             "similarity_score": round(1.0 - row.get("_distance", 0.5), 4) if "_distance" in row else 0.5
         }
 
+    def _validate_candidates(self, candidates: List[Dict[str, Any]], schema_type: str = "record") -> List[Dict[str, Any]]:
+        if not candidates:
+            return candidates
+        try:
+            from src.serving.schemas import MovieRecordSchema, RerankerOutputSchema
+            df = pd.DataFrame(candidates)
+            if schema_type == "rerank":
+                RerankerOutputSchema.validate(df)
+            else:
+                MovieRecordSchema.validate(df)
+        except Exception as e:
+            print(f"⚠️ [Data Quality Warning] Schema validation failed: {e}")
+        return candidates
+
     # ================= LEVEL 1 =================
     def search_by_description(self, query_text: str, top_k: int = 10, use_reranker: bool = True) -> List[Dict[str, Any]]:
         if self.table is None: self.load_table()
@@ -85,8 +100,9 @@ class SemanticSearchEngine:
         
         candidates = [self._format_result(row) for _, row in results_df.iterrows()]
         if use_reranker:
-            return Reranker.rerank(candidates)[:top_k]
-        return candidates[:top_k]
+            res = Reranker.rerank(candidates)[:top_k]
+            return self._validate_candidates(res, "rerank")
+        return self._validate_candidates(candidates[:top_k], "record")
 
     def search_similar_movies(self, movie_id: int, top_k: int = 5, use_reranker: bool = True) -> List[Dict[str, Any]]:
         if self.table is None: self.load_table()
@@ -110,8 +126,9 @@ class SemanticSearchEngine:
         
         candidates = [self._format_result(row) for _, row in filtered_df.iterrows()]
         if use_reranker:
-            return Reranker.rerank(candidates)[:top_k]
-        return candidates[:top_k]
+            res = Reranker.rerank(candidates)[:top_k]
+            return self._validate_candidates(res, "rerank")
+        return self._validate_candidates(candidates[:top_k], "record")
 
     def search_similar_movies_by_title(self, title: str, top_k: int = 5, use_reranker: bool = True) -> List[Dict[str, Any]]:
         if self.table is None: self.load_table()
@@ -132,13 +149,14 @@ class SemanticSearchEngine:
         
         candidates = [self._format_result(row) for _, row in filtered_df.iterrows()]
         if use_reranker:
-            return Reranker.rerank(candidates)[:top_k]
-        return candidates[:top_k]
+            res = Reranker.rerank(candidates)[:top_k]
+            return self._validate_candidates(res, "rerank")
+        return self._validate_candidates(candidates[:top_k], "record")
 
     def get_movies_by_decade(self, decade: str, top_k: int = 5) -> List[Dict[str, Any]]:
         if self.table is None: self.load_table()
         df = self.table.to_pandas()
-        df_filtered = df[df['title'].str.contains(f"({decade[:2]}", na=False)]
+        df_filtered = df[df['title'].str.contains(f"({decade[:2]}", regex=False, na=False)]
         df_sorted = df_filtered.sort_values(by="rating_count", ascending=False).head(top_k)
         return [self._format_result(row) for _, row in df_sorted.iterrows()]
 
@@ -198,4 +216,5 @@ class SemanticSearchEngine:
         
         results_df = self.table.search(query_vector).metric("cosine").limit(top_k * 2).to_pandas()
         candidates = [self._format_result(row) for _, row in results_df.iterrows()]
-        return Reranker.rerank(candidates)[:top_k]
+        res = Reranker.rerank(candidates)[:top_k]
+        return self._validate_candidates(res, "rerank")

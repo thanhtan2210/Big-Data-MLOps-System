@@ -118,4 +118,16 @@ To run the Streamlit frontend and the AI Agent locally:
 - **Smart Fallback:** Groq API limits (RateLimitError) are handled gracefully. If the LLM quota is exhausted, the Python backend intercepts the exception, performs an offline local LanceDB Vector Search, and returns a structured text list to maintain **100% High Availability**.
 
 ---
+
+## 📊 Performance & Benchmarks
+
+To ensure the production system remains extremely lightweight and handles high throughput with sub-millisecond latencies, we benchmarked the search and reranking layers:
+
+- **LanceDB Raw Search Latency:** ~4.79ms average (p50: 4.55ms, p95: 6.71ms)
+- **Reranking Rescoring Latency:** ~0.02ms average
+- **End-to-End Search Pipeline:** ~6.87ms average (p50: 6.28ms, p95: 10.46ms)
+
+*Detailed performance metrics and reports are documented in [benchmark_results.md](file:///d:/Bon%20Bon/SourceCode/git/Big-Data-MLOps-System/docs/benchmark_results.md).*
+
+---
 *Developed as a Graduation Project Report focusing on Big Data and MLOps.*

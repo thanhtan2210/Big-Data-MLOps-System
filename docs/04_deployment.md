@@ -13,4 +13,4 @@
 
 ## Optimization & Stability
 - **Dependency Pinning**: We strictly pin `httpx==0.27.2` to prevent Groq SDK networking conflicts, and `lancedb>=0.26.0` to ensure metadata compatibility (e.g., the `num_bits` parameter in the Colab indexing schema).
-- **Pandas Metadata Filtering**: The DataFusion SQL parser inside LanceDB often struggles with identifier normalization (e.g., casing issues like `movieId` vs `movieid`). We completely bypass this by extracting the small database (13k rows) to a Pandas DataFrame in RAM and utilizing pure boolean indexing for exact metadata lookups, achieving 100% stability with sub-millisecond latency.
+- **Pandas Metadata Filtering**: The DataFusion SQL parser inside LanceDB often struggles with identifier normalization (e.g., casing issues like `movieId` vs `movieid`). We completely bypass this by extracting the small database (13k rows) to a Pandas DataFrame in RAM and utilizing pure boolean indexing for exact metadata lookups, achieving 100% stability with a search latency of ~4.79ms (p50: 4.55ms, p95: 6.71ms) — see [benchmark_results.md](file:///d:/Bon%20Bon/SourceCode/git/Big-Data-MLOps-System/docs/benchmark_results.md).
