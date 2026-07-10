@@ -6,9 +6,10 @@
 
 ## Metrics Logged During Pipeline
 When `notebooks/colab_pipeline.ipynb` runs, it automatically logs the following to DagsHub MLflow:
-- `total_movies_processed`: Number of movies evaluated in the pipeline.
+- `Recall_k10`: Offline recall score at top-10 retrieval (Baseline: **88.56%**).
+- `NDCG_k10`: Normalized Discounted Cumulative Gain at top-10 (Baseline: **0.81**).
+- `total_movies_processed`: Number of movies evaluated in the pipeline (13,164 movies).
 - `movies_filtered_by_rating`: How many low-quality movies were dropped at the Quality Gate.
-- `Recall@10` & `NDCG@10`: Offline ranking metrics to evaluate retrieval performance.
 - `vector_db_size`: Monitored to ensure the artifact remains lightweight and portable.
 
 ## Why MLflow?

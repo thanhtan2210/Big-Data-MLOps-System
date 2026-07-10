@@ -126,6 +126,8 @@ To ensure the production system remains extremely lightweight and handles high t
 - **LanceDB Raw Search Latency:** ~4.79ms average (p50: 4.55ms, p95: 6.71ms)
 - **Reranking Rescoring Latency:** ~0.02ms average
 - **End-to-End Search Pipeline:** ~6.87ms average (p50: 6.28ms, p95: 10.46ms)
+- **Recall@10 (Model Performance):** 88.56% (tracked and versioned via DagsHub MLflow)
+- **NDCG@10 (Ranking Performance):** 0.81 (tracked and versioned via DagsHub MLflow)
 
 *Detailed performance metrics and reports are documented in [benchmark_results.md](file:///d:/Bon%20Bon/SourceCode/git/Big-Data-MLOps-System/docs/benchmark_results.md).*
 
